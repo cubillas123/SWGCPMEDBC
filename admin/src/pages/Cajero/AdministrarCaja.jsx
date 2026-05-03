@@ -108,7 +108,7 @@ const esPasoCarrito = pasoActual === 1 || pasoActual === 2;
 
             {pasoActual === 3 && <Facturacion />}
             {pasoActual === 4 && <Cupon />}
-            {pasoActual === 5 && <Pago />}
+            {pasoActual === 5 && <Pago itemAPagar={itemAPagar} totalCalculado={totalCalculado} />}
 
           </div>
         </div>

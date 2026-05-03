@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import "../../styles/pages/Cajero/Pago.css";
 import qrYape from '../../assets/yape.png';
 
 const QR_YAPE = qrYape; 
 
-const Pago = () => {
+const Pago = ({ itemAPagar, totalCalculado }) => {
   const [metodoSeleccionado, setMetodoSeleccionado] = useState('tarjeta');
   const [pagoAprobado, setPagoAprobado] = useState(false);
   const [tarjeta, setTarjeta] = useState({
@@ -26,9 +26,34 @@ const Pago = () => {
     return val.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
   };
 
-  const confirmarPago = () => setPagoAprobado(true);
+  const confirmarPago = () => {
+    // Guardar venta en localStorage para que el admin la vea
+    if (itemAPagar) {
+      const datosVenta = {
+        id: Date.now(),
+        producto: itemAPagar.producto || "Producto",
+        venta: itemAPagar.venta || `S/ ${(totalCalculado || 0).toFixed(2)}`,
+        cantidad: 1,
+        total: totalCalculado || 0,
+        metodoPago: metodoSeleccionado.charAt(0).toUpperCase() + metodoSeleccionado.slice(1),
+        estado: "VALIDADO",
+        fecha: new Date().toLocaleDateString(),
+        imagen: itemAPagar.imagen || "https://via.placeholder.com/80x60?text=Producto"
+      };
+
+      const ventasRegistradas = JSON.parse(localStorage.getItem("ventas_registradas")) || [];
+      ventasRegistradas.push(datosVenta);
+      localStorage.setItem("ventas_registradas", JSON.stringify(ventasRegistradas));
+
+      // Notificar a otros tabs
+      window.dispatchEvent(new Event("ventaRegistrada"));
+    }
+
+    setPagoAprobado(true);
+  };
 
   if (pagoAprobado) {
+    const fechaVenta = new Date().toLocaleString();
     return (
       <div className="seccion-paso fade-in">
         <div className="pago-aprobado-card">
@@ -41,13 +66,13 @@ const Pago = () => {
           <div className="pago-aprobado-detalle">
             <h4>Detalles de la Compra</h4>
             <div className="pago-detalle-grid">
-              <div><span className="pago-detalle-label">Fecha de venta</span><span>2025-12-02 16:34:38</span></div>
+              <div><span className="pago-detalle-label">Fecha de venta</span><span>{fechaVenta}</span></div>
               <div><span className="pago-detalle-label">Tipo de venta</span><span>V001</span></div>
               <div><span className="pago-detalle-label">Tipo de Comprobante</span><span>Boleta</span></div>
               <div><span className="pago-detalle-label">N° de Comprobante</span><span>CV001</span></div>
               <div><span className="pago-detalle-label">Método de Pago</span><span>{metodoSeleccionado.toUpperCase()}</span></div>
             </div>
-            <div className="pago-aprobado-total">S/ 2,293.50</div>
+            <div className="pago-aprobado-total">S/ {(totalCalculado || 0).toFixed(2)}</div>
             <div className="pago-orden-aviso">
               📦 <strong>Orden de Compra</strong><br />
               <span>No se requiere orden de compra — Stock suficiente.</span>

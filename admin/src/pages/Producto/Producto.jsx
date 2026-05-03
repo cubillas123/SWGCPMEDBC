@@ -9,23 +9,21 @@ const Producto = () => {
   const [busqueda, setBusqueda] = useState("");
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const datosDesdeUrl = params.get("data");
-    
-    let historialActual = JSON.parse(localStorage.getItem("ventas_admin_3001")) || [];
-
-    if (datosDesdeUrl) {
-      try {
-        const ventasRecibidas = JSON.parse(decodeURIComponent(datosDesdeUrl));
-        historialActual = [...historialActual, ...ventasRecibidas];
-        localStorage.setItem("ventas_admin_3001", JSON.stringify(historialActual));
-        window.history.replaceState({}, document.title, window.location.pathname);
-      } catch (error) {
-        console.error("Error al procesar datos:", error);
-      }
-    }
-    setVentas(historialActual); 
+    cargarVentas();
+    // Escuchar cambios en localStorage desde otros tabs
+    window.addEventListener("storage", cargarVentas);
+    // Escuchar evento personalizado de venta registrada
+    window.addEventListener("ventaRegistrada", cargarVentas);
+    return () => {
+      window.removeEventListener("storage", cargarVentas);
+      window.removeEventListener("ventaRegistrada", cargarVentas);
+    };
   }, []);
+
+  const cargarVentas = () => {
+    const ventasGuardadas = JSON.parse(localStorage.getItem("ventas_registradas")) || [];
+    setVentas(ventasGuardadas);
+  };
 
   const exportarPDF = () => {
     const doc = new jsPDF();
@@ -35,11 +33,12 @@ const Producto = () => {
       i + 1, 
       v.producto || "Sin nombre", 
       v.venta || "S/ 0.00", 
-      v.estado || "PENDIENTE"
+      v.estado || "PENDIENTE",
+      v.fecha || ""
     ]);
 
     autoTable(doc, {
-      head: [['#', 'Producto', 'Precio Venta', 'Estado']],
+      head: [['#', 'Producto', 'Total', 'Estado', 'Fecha']],
       body: tablaData,
       startY: 20,
       theme: 'grid',
@@ -49,10 +48,9 @@ const Producto = () => {
     doc.save("reporte-ventas.pdf");
   };
 
-  const eliminarVenta = (index) => {
-    const nuevaLista = ventas.filter((_, i) => i !== index);
+  const eliminarVenta = (id) => {
+    const nuevaLista = ventas.filter((v) => v.id !== id);
     setVentas(nuevaLista);
-    localStorage.setItem("ventas_admin_3001", JSON.stringify(nuevaLista));
   };
 
   return (
@@ -60,7 +58,7 @@ const Producto = () => {
       <header className="table-header-container">
         <div className="header-text">
           <h1><FaBoxOpen /> Gestión de Productos</h1>
-          <p>Listado de compras y estados de pago</p>
+          <p>Ventas registradas desde el carrito del cliente</p>
         </div>
         <button className="btn-export-pdf" onClick={exportarPDF}>
           <FaFilePdf /> Exportar PDF
@@ -86,8 +84,10 @@ const Producto = () => {
               <th>#</th>
               <th>PRODUCTO</th>
               <th>IMAGEN</th>
-              <th>PRECIO VENTA</th>
+              <th>TOTAL</th>
+              <th>MÉTODO PAGO</th>
               <th>ESTADO</th>
+              <th>FECHA</th>
               <th>ACCIONES</th>
             </tr>
           </thead>
@@ -103,14 +103,16 @@ const Producto = () => {
                     <div className="container-img-tabla">
                       <img 
                         src={v.imagen} 
-                        alt="producto" 
+                        alt={v.producto} 
                         className="img-tabla" 
-                        onError={(e) => { e.target.src = "https://via.placeholder.com/80x60?text=Cocina"; }}
+                        onError={(e) => { e.target.src = "https://via.placeholder.com/80x60?text=Producto"; }}
                       />
                     </div>
                   </td>
                   <td className="prod-price">{v.venta}</td>
+                  <td>{v.metodoPago || "No especificado"}</td>
                   <td><span className="badge-status">{v.estado}</span></td>
+                  <td>{v.fecha || new Date().toLocaleDateString()}</td>
                   <td>
                     <button onClick={() => eliminarVenta(i)} className="btn-delete">
                       <FaTrash />
@@ -120,7 +122,7 @@ const Producto = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="6" className="no-data">No hay compras registradas en el sistema.</td>
+                <td colSpan="8" className="no-data">No hay compras registradas. Los clientes deben completar el pago en el carrito.</td>
               </tr>
             )}
           </tbody>
@@ -131,4 +133,3 @@ const Producto = () => {
 };
 
 export default Producto;
-//para el pdf npm install jspdf jspdf-autotable
