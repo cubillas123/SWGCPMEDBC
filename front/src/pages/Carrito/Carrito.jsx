@@ -13,10 +13,8 @@ const Carrito = () => {
   const irAPagar = () => {
     if (carrito.length === 0) return;
 
-    // Calcular total
     const total = carrito.reduce((acc, item) => acc + item.precio, 0);
 
-    // Crear datos de la venta para pasar a la página de pago
     const datosVenta = carrito.map(item => ({
       producto: item.nombre,
       imagen: item.imagen, 
@@ -24,10 +22,8 @@ const Carrito = () => {
       estado: "PENDIENTE"
     }));
 
-    // Pasar datos a la página de pago en Admin
     const datosVentaString = encodeURIComponent(JSON.stringify(datosVenta));
     
-    // Guardar en sessionStorage para que el componente Pago lo use
     sessionStorage.setItem("datosCarrito", JSON.stringify({
       productos: carrito,
       total: total

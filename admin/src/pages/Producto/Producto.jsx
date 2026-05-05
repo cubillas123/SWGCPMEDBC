@@ -10,9 +10,7 @@ const Producto = () => {
 
   useEffect(() => {
     cargarVentas();
-    // Escuchar cambios en localStorage desde otros tabs
     window.addEventListener("storage", cargarVentas);
-    // Escuchar evento personalizado de venta registrada
     window.addEventListener("ventaRegistrada", cargarVentas);
     return () => {
       window.removeEventListener("storage", cargarVentas);
